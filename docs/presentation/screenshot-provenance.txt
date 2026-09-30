@@ -1,0 +1,97 @@
+MedHubHaqathon presentation — screenshot provenance
+Prepared 2026-09-30. Canva design: DAHWqaMc-Ds.
+UPDATE: the current jury revision below supersedes the original screenshot/content
+inventory. Original inventory is retained for traceability, not current feature status.
+Screenshots are unmodified actual browser captures, not generated or recreated UI.
+All source runs used disposable SQLite/audio storage and deterministic synthetic providers.
+No real patient records, production consultation data, API keys, authentication tokens,
+or environment files were uploaded to Canva. No sharing permissions were changed.
+
+Slide 3 — transcript
+Source: /tmp/medhub-p0-acceptance-2f_cfz_j/synthetic-transcript.png
+1600×900; Canva asset MAHWqWdKVnY.
+SHA256: a836db0aff36144a3d8020ab266a585482fa22c4bbe7bbde9f15728d52e28df2
+
+Slide 4 — populated clinical form
+Source: /tmp/medhub-p0-acceptance-5lqr30rs/synthetic-doctor-review.png
+1600×900; Canva asset MAHWqs73d4U.
+SHA256: e994fec53452d02ed8a926505ff39f58b2db3086e3024dd29da1ba58b3f5afd8
+
+Slide 5 — approved PDF preview
+Source: /tmp/medhub-p0-acceptance-2f_cfz_j/synthetic-pdf-preview.png
+1600×900; Canva asset MAHWqbQo9W4.
+SHA256: 81ea380ce0557351ccadf42f837d8dde1bbf29bf5f3c91f958d99dbf114a8780
+
+Slide 6 — source selection and audio
+Source: /tmp/medhub-p0-acceptance-2f_cfz_j/synthetic-evidence.png
+1600×900; Canva asset MAHWqdB5LTw.
+SHA256: d8b6ad76771449efcccc193934a544b45a884f41ca68b81475f3335cf50c64b2
+
+Slide 7 — full privacy panel
+Source: /tmp/medhub-p0-acceptance-7mf7pkxo/synthetic-privacy.png
+559×412; genuine element screenshot, Canva asset MAHWqQQbhjw.
+SHA256: b2d4260cd1f14d9853238a55b211f8e2af4d956d6aee27d754e0321c58590410
+
+Local copies and draft slide previews: /tmp/medhub-presentation-Mps4JP/
+The source UI's recorded durations reflect the deterministic acceptance scenario,
+not a benchmark of production Whisper or OpenAI latency/accuracy.
+
+Content QA: 12 landscape slides, 5 genuine screenshots, no screenshot placeholders;
+confirmed team names and roles. MockMIS is labeled as mock; external masked-text
+OpenAI processing and regex limitations are disclosed. Docker runtime is not claimed.
+QR verification, sparse exports, protocol checks are labeled planned, not implemented.
+No invented time-saving percentages, clinical accuracy, or government/EDS claims.
+
+Export limitation: current Canva tools expose editable design and low-resolution
+600×337 previews, not native PDF/PPTX export. Download a native PDF from Canva's UI
+after approving and saving the draft. No low-resolution preview PDF was presented
+as a submission-ready export. Speaker notes are supplied separately in this folder.
+
+Jury revision, 2026-09-30, editing transaction 1643403949871717
+Status: user explicitly approved the new preview; transaction committed successfully.
+Draft edit/preview: https://www.canva.com/d/vA8pkczqbYNmPVG
+Saved edit link: https://www.canva.com/d/GotLZIBVPJm7b2P
+Saved view link: https://www.canva.com/d/uszpMAdoS-DOemv
+Post-commit metadata verified: DAHWqaMc-Ds, 12 presentation pages, approved title.
+All seven replacement images come from the corrected, isolated synthetic run:
+/tmp/medhub-p0-acceptance-yzy0w8lr/
+
+Slide 3: synthetic-transcript.png, asset MAHWqnNHtlY
+SHA256 34e6da9a4f7ccc1695781d18a127b78f31d164695db9d7b873e2e410bdcf3925
+Slide 4: synthetic-doctor-review.png, asset MAHWquhOayg
+SHA256 fa53a9cf7fed0ba0abe585416d560f929745d635e8a53af6d75025cc19fa1333
+Slide 5: synthetic-pdf-preview.png, asset MAHWqmPiDyI
+SHA256 a170a77884e8e5544823c291b2537f4374909d52f3b0124276634a160f33bc72
+Slide 6: synthetic-evidence.png, asset MAHWqpSTtGI
+SHA256 676a641cf31e03e981c545e8db808eca9edd2ebd503b58a4ef147bde58308a57
+Slide 7: synthetic-privacy.png, asset MAHWqsyKf1o
+SHA256 f683528f955b124cc352863958d857a7f7bcafe0ac933766f4ee9aae5719e39a
+Slide 9: synthetic-processing.png, asset MAHWqgMNJpk
+SHA256 78b2c3bac9f4a057556623ff277af08cb9eb747ea577149283740f069a1ef402
+Slide 11: synthetic-protocol-panel.png, asset MAHWqq0mCsg
+SHA256 096d964af815cf54cfcd8e5f333ec5e6ea22b692b2bfb0f2a7845c93ba4bb9e4
+
+Corrected slide previews: /tmp/medhub-jury-preview-4QPlLj/slide-N.png
+All full viewport captures are 1600x900; privacy is a genuine 559x412 element capture.
+No UI image recreation or content manipulation; original screenshots uploaded as-is.
+QR/immutable PDF, sparse exports/Add controls and partial protocol-source checks are
+now described as implemented, with local-only QR and non-clinical-validation limits.
+Public QR exposes registry/hash metadata only, not a public medical file or EDS.
+PDF screenshot is a synthetic multipage stress test; protocol screenshot shows its
+search panel, not a completed protocol result. Both are labeled honestly in notes.
+250 backend tests is one integrated passing run, not a clinical accuracy metric.
+Team uses Vaccina AI / ВАКСИНА АЙ with the four previously confirmed names/roles.
+Native PDF export limitation remains unchanged.
+
+Post-save screenshot audit (user reported seeing old captures):
+Fresh saved-page thumbnails from get_design_pages confirm the new screenshots on
+slides 3, 4, 5, 7, 9 and 11. Saved fill metadata confirms all seven new asset IDs.
+Slide 4 visibly differs from original: Add controls replace empty vitals/anamnesis
+inputs, and pulse 80/min is visible. Slide 5 now shows the MedHub-branded PDF.
+Six viewport screenshots use 1180x663.75 placement, exactly 16:9 like 1600x900 source;
+privacy uses 814x600 against 559x412 source (rounding difference below 0.02%).
+No stretching or old replacement was found. UI text is small at this slide scale;
+that is a readability limitation, not failed saving or a stale screenshot.
+Downloaded actual saved renders: /tmp/medhub-canva-saved-audit-kyi8f6/
+Original comparison: /tmp/medhub-presentation-Mps4JP/slide-4-draft.png
+Read-only audit transaction 8823069172714093905 was cancelled without edits.

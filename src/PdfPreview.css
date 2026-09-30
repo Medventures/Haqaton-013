@@ -1,0 +1,12 @@
+.pdf-preview-dialog{position:fixed;z-index:80;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;width:min(1000px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:hidden;border-radius:18px;background:#fff;box-shadow:0 25px 90px #071e3060}
+.pdf-preview-header,.pdf-preview-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px}
+.pdf-preview-header{border-bottom:1px solid #e7efed}
+.pdf-preview-header h2{font-size:18px;font-weight:800;color:#173e46}
+.pdf-preview-header p{font-size:12px;color:#6f858b}
+.pdf-preview-toolbar{flex-wrap:wrap;border-bottom:1px solid #e7efed}
+.pdf-preview-navigation{display:flex;align-items:center;gap:10px;font-size:13px;color:#35535b}
+.pdf-preview-pages{position:relative;min-height:150px;overflow:auto;padding:20px;display:flex;align-items:flex-start;justify-content:center;background:#eaf0ef}
+.pdf-preview-pages canvas{display:block;max-width:100%;height:auto;background:#fff;box-shadow:0 3px 14px #173e4629}
+.pdf-preview-painting{position:absolute;top:30px;background:#fff;padding:8px 12px;border-radius:8px;color:#35535b;font-size:13px}
+.pdf-preview-message{display:flex;min-height:200px;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#35535b;text-align:center;padding:24px}
+@media(max-width:600px){.pdf-preview-dialog{width:calc(100vw - 12px);max-height:calc(100dvh - 12px)}.pdf-preview-header,.pdf-preview-toolbar{padding:10px}.pdf-preview-navigation{width:100%;justify-content:space-between}.pdf-preview-pages{padding:8px}}

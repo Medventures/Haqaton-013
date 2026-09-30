@@ -1,0 +1,1018 @@
+Ниже ТЗ, которое я бы реально дал команде/Codex для начала разработки. Я сознательно делаю **MVP без микросервисного оверинжиниринга**: React + FastAPI + local Whisper + OpenAI API + PostgreSQL + Docker Compose.
+
+# Техническое задание — AI Medical Scribe
+
+## 1. Назначение системы
+
+Разработать веб-сервис для автоматического формирования листа врачебной консультации на основе разговора врача и пациента.
+
+Система должна:
+
+```text
+Разговор врача и пациента
+          ↓
+Запись аудио
+          ↓
+Speech-to-Text
+          ↓
+Транскрипция
+          ↓
+Маскирование персональных данных
+          ↓
+LLM
+          ↓
+Структурированный лист консультации
+          ↓
+Проверка и редактирование врачом
+          ↓
+Подтверждение
+          ↓
+МИС
+```
+
+Основная цель — уменьшить время, которое врач тратит на ручное заполнение документации после/во время приёма.
+
+**Принцип системы:**
+
+> AI формирует черновик документа. Финальное решение и подтверждение всегда остаётся за врачом.
+
+---
+
+# 2. Технологический стек
+
+### Frontend
+
+```text
+React
+TypeScript
+Vite
+Tailwind CSS
+shadcn/ui
+React Hook Form
+Zod
+TanStack Query
+```
+
+### Backend
+
+```text
+Python 3.12+
+FastAPI
+Pydantic
+SQLAlchemy
+Alembic
+PostgreSQL
+```
+
+### Speech-to-Text
+
+Для MVP:
+
+```text
+faster-whisper
+```
+
+Начальная модель:
+
+```text
+small
+```
+
+Конфигурация для CPU:
+
+```python
+WhisperModel(
+    "small",
+    device="cpu",
+    compute_type="int8"
+)
+```
+
+Если доступна NVIDIA GPU:
+
+```python
+WhisperModel(
+    "medium",
+    device="cuda",
+    compute_type="float16"
+)
+```
+
+Архитектура должна позволять впоследствии заменить модель на:
+
+```text
+Whisper large-v3
+RU/KZ Whisper fine-tune
+MMS
+Qwen ASR
+```
+
+без изменения Consultation Service.
+
+### LLM
+
+Для MVP:
+
+**OpenAI API + Structured Outputs.**
+
+LLM используется исключительно для:
+
+```text
+medical transcript
+        ↓
+structured consultation data
+```
+
+LLM **не должна самостоятельно диагностировать пациента**.
+
+### Infrastructure
+
+```text
+Docker
+Docker Compose
+Nginx
+PostgreSQL
+```
+
+---
+
+# 3. Архитектура
+
+Для MVP использовать **Modular Monolith**.
+
+Не создавать отдельные микросервисы для Whisper, LLM, PII и т.д.
+
+```text
+                    ┌────────────────────┐
+                    │ React + TypeScript │
+                    │                    │
+                    │ Doctor Workspace   │
+                    └─────────┬──────────┘
+                              │
+                         REST / HTTPS
+                              │
+                    ┌─────────▼──────────┐
+                    │      FastAPI       │
+                    │                    │
+                    │ Consultation       │
+                    │ Transcription      │
+                    │ PII                │
+                    │ LLM                │
+                    │ MIS                │
+                    └──────┬──────┬──────┘
+                           │      │
+                  ┌────────┘      └─────────┐
+                  ▼                         ▼
+            PostgreSQL               faster-whisper
+                                            │
+                                            ▼
+                                      transcript
+                                            │
+                                            ▼
+                                       PII Masking
+                                            │
+                                            ▼
+                                       OpenAI API
+                                            │
+                                            ▼
+                                  Consultation JSON
+```
+
+---
+
+# 4. Основной workflow
+
+## Шаг 1 — создание консультации
+
+Врач открывает страницу пациента и создаёт новую консультацию.
+
+Frontend:
+
+```http
+POST /api/v1/consultations
+```
+
+Request:
+
+```json
+{
+  "external_patient_id": "PATIENT-1024"
+}
+```
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "status": "created"
+}
+```
+
+Не хранить лишние персональные данные пациента, если они не требуются системе.
+
+---
+
+# 5. Запись аудио
+
+Frontend использует:
+
+```text
+MediaRecorder API
+```
+
+Состояния:
+
+```text
+IDLE
+↓
+RECORDING
+↓
+STOPPED
+↓
+UPLOADING
+↓
+PROCESSING
+```
+
+UI:
+
+```text
+┌──────────────────────────────────────┐
+│ 🔴 Идет запись              04:32    │
+│                                      │
+│              [■ Завершить]           │
+└──────────────────────────────────────┘
+```
+
+После завершения отправить файл:
+
+```http
+POST /api/v1/consultations/{id}/audio
+```
+
+Форматы:
+
+```text
+webm
+wav
+mp3
+m4a
+```
+
+Backend при необходимости приводит аудио к:
+
+```text
+mono
+16 kHz
+PCM
+```
+
+---
+
+# 6. Speech-to-Text
+
+Backend передаёт аудио в `faster-whisper`.
+
+Создать абстракцию:
+
+```python
+class SpeechToTextProvider(Protocol):
+
+    async def transcribe(
+        self,
+        audio_path: str
+    ) -> Transcript:
+        ...
+```
+
+Первая реализация:
+
+```text
+WhisperSTTProvider
+```
+
+В будущем:
+
+```text
+WhisperSTTProvider
+MMSSTTProvider
+QwenSTTProvider
+```
+
+---
+
+# 7. Формат транскрипции
+
+Минимальная структура:
+
+```json
+{
+  "language": "ru",
+  "duration": 245.4,
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 4.3,
+      "text": "Что вас беспокоит?"
+    },
+    {
+      "start": 4.4,
+      "end": 9.7,
+      "text": "У меня третий день температура и кашель."
+    }
+  ]
+}
+```
+
+Сохранять:
+
+1. исходную транскрипцию;
+2. сегменты;
+3. язык;
+4. продолжительность;
+5. используемую STT-модель.
+
+---
+
+# 8. Speaker diarization
+
+Для **первого MVP сделать optional**.
+
+Не блокировать проект diarization.
+
+Версия 1 может иметь:
+
+```text
+Что вас беспокоит?
+Третий день температура...
+Какие препараты принимали?
+Парацетамол...
+```
+
+Следующий этап:
+
+```text
+DOCTOR:
+Что вас беспокоит?
+
+PATIENT:
+Третий день температура.
+
+DOCTOR:
+Какие препараты принимали?
+
+PATIENT:
+Парацетамол 500 мг.
+```
+
+Интерфейс должен позволять добавить speaker labels позднее.
+
+---
+
+# 9. Medical normalization
+
+После Whisper добавить простой preprocessing.
+
+Например:
+
+```text
+парацетомол
+      ↓
+парацетамол
+```
+
+или:
+
+```text
+давление сто двадцать на восемьдесят
+      ↓
+АД 120/80 мм рт. ст.
+```
+
+Но **не делать агрессивную автоматическую коррекцию**, способную изменить медицинский смысл.
+
+Хранить:
+
+```text
+raw_transcript
+normalized_transcript
+```
+
+---
+
+# 10. PII Guard
+
+Перед отправкой текста в OpenAI выполняется обезличивание.
+
+Обнаруживать минимум:
+
+```text
+ИИН
+ФИО
+телефон
+email
+адрес
+дата рождения
+номер документа
+```
+
+Например:
+
+```text
+Исходный текст:
+
+Иванов Иван Иванович,
+ИИН 010203500123,
+телефон +7 701 123 45 67.
+```
+
+превращается в:
+
+```text
+[PATIENT_NAME],
+ИИН [PATIENT_IIN],
+телефон [PATIENT_PHONE].
+```
+
+### Важное правило
+
+В OpenAI отправляется:
+
+```text
+masked_transcript
+```
+
+а не:
+
+```text
+raw_transcript
+```
+
+PII mapping не отправляется во внешний API.
+
+---
+
+# 11. PII архитектура
+
+Интерфейс:
+
+```python
+class PIIMaskingService:
+
+    def mask(
+        self,
+        transcript: str
+    ) -> MaskedTranscript:
+        ...
+```
+
+Результат:
+
+```json
+{
+  "text": "Пациент [PERSON_1] сообщает...",
+  "entities": [
+    {
+      "type": "PERSON",
+      "placeholder": "[PERSON_1]"
+    }
+  ]
+}
+```
+
+Для MVP можно использовать:
+
+```text
+regex
++
+NER
++
+custom Kazakhstan rules
+```
+
+Особенно отдельно реализовать ИИН.
+
+---
+
+# 12. LLM Provider
+
+Ключевой архитектурный интерфейс:
+
+```python
+class LLMProvider(Protocol):
+
+    async def extract_consultation(
+        self,
+        transcript: str
+    ) -> ConsultationData:
+        ...
+```
+
+MVP:
+
+```text
+OpenAIProvider
+```
+
+Будущее:
+
+```text
+OpenAIProvider
+LocalQwenProvider
+MedGemmaProvider
+NvidiaNimProvider
+```
+
+Таким образом бизнес-логика не зависит от конкретной LLM.
+
+---
+
+# 13. Главное правило LLM
+
+LLM является **information extraction engine**, а не врачом.
+
+System instruction должна содержать правило примерно следующего содержания:
+
+```text
+You are an information extraction system
+for medical consultation documentation.
+
+Extract only information explicitly present
+in the transcript.
+
+Do not diagnose the patient.
+
+Do not create medications, symptoms,
+measurements or recommendations that
+were not explicitly mentioned.
+
+If information is absent, return null
+or an empty collection.
+
+Preserve medication names, dosages,
+measurements and clinical terminology.
+
+Return data according to the provided schema.
+```
+
+---
+
+# 14. Consultation Schema
+
+Первоначально предлагаю такую структуру:
+
+```python
+class Medication(BaseModel):
+    name: str
+    dosage: str | None
+    frequency: str | None
+    duration: str | None
+
+
+class VitalSigns(BaseModel):
+    temperature: str | None
+    blood_pressure: str | None
+    heart_rate: str | None
+    respiratory_rate: str | None
+    oxygen_saturation: str | None
+
+
+class ConsultationData(BaseModel):
+
+    complaints: list[str]
+
+    anamnesis_morbi: str | None
+    anamnesis_vitae: str | None
+
+    allergies: list[str]
+
+    medications: list[Medication]
+
+    vital_signs: VitalSigns | None
+
+    objective_status: str | None
+
+    diagnosis: str | None
+
+    recommendations: list[str]
+
+    prescribed_medications: list[Medication]
+
+    additional_notes: str | None
+```
+
+Но **перед финальной реализацией эту схему нужно привести один в один к реальному листу консультации UMC/МИС**.
+
+Это одна из первых задач проекта.
+
+---
+
+# 15. Пример результата LLM
+
+Вход:
+
+```text
+Пациент сообщает о сухом кашле,
+слабости и температуре до 38 градусов.
+
+Симптомы появились три дня назад.
+
+Принимал парацетамол 500 миллиграмм.
+
+Врач сообщил предварительный диагноз:
+острый бронхит.
+```
+
+Результат:
+
+```json
+{
+  "complaints": [
+    "сухой кашель",
+    "слабость",
+    "повышение температуры до 38°C"
+  ],
+
+  "anamnesis_morbi": "Симптомы появились 3 дня назад.",
+
+  "anamnesis_vitae": null,
+
+  "allergies": [],
+
+  "medications": [
+    {
+      "name": "Парацетамол",
+      "dosage": "500 мг",
+      "frequency": null,
+      "duration": null
+    }
+  ],
+
+  "vital_signs": {
+    "temperature": "38°C",
+    "blood_pressure": null,
+    "heart_rate": null,
+    "respiratory_rate": null,
+    "oxygen_saturation": null
+  },
+
+  "objective_status": null,
+
+  "diagnosis": "Острый бронхит",
+
+  "recommendations": [],
+
+  "prescribed_medications": [],
+
+  "additional_notes": null
+}
+```
+
+---
+
+# 16. Валидация
+
+Нельзя доверять непосредственно JSON от LLM.
+
+Pipeline:
+
+```text
+OpenAI
+ ↓
+Structured Output
+ ↓
+Pydantic
+ ↓
+Business validation
+ ↓
+ConsultationDraft
+```
+
+Проверять:
+
+```text
+JSON schema
+required fields
+field lengths
+enum values
+medication structure
+unexpected fields
+```
+
+При ошибке допускается **одна автоматическая повторная попытка**.
+
+---
+
+# 17. Doctor Review
+
+После генерации статус:
+
+```text
+AI_GENERATED
+```
+
+Документ нельзя отправить в МИС.
+
+Врач видит:
+
+```text
+┌────────────────────────────────────────────────────┐
+│ Консультация                           AI Draft     │
+├───────────────────────┬────────────────────────────┤
+│ Транскрипция          │ Лист консультации          │
+│                       │                            │
+│ Что вас беспокоит?    │ Жалобы                    │
+│                       │ ┌────────────────────────┐ │
+│ Третий день кашель... │ │ Кашель                │ │
+│                       │ │ Температура 38°C       │ │
+│ Принимали препараты?  │ └────────────────────────┘ │
+│                       │                            │
+│ Парацетамол 500 мг.   │ Анамнез                   │
+│                       │ ┌────────────────────────┐ │
+│                       │ │ Болеет 3 дня...       │ │
+│                       │ └────────────────────────┘ │
+│                       │                            │
+│                       │ Диагноз                   │
+│                       │ ┌────────────────────────┐ │
+│                       │ │ Острый бронхит        │ │
+│                       │ └────────────────────────┘ │
+├───────────────────────┴────────────────────────────┤
+│ [Сохранить]                [✓ Подтвердить]         │
+└────────────────────────────────────────────────────┘
+```
+
+Все AI-поля должны быть редактируемыми.
+
+---
+
+# 18. Audit trail
+
+Очень рекомендую заложить сразу.
+
+Нужно понимать:
+
+```text
+что сказала LLM
+        ↓
+что исправил врач
+        ↓
+что ушло в МИС
+```
+
+Например:
+
+```json
+{
+  "field": "diagnosis",
+  "ai_value": "Острый бронхит",
+  "doctor_value": "ОРВИ",
+  "changed": true
+}
+```
+
+Это потом позволит ещё и измерять качество AI.
+
+---
+
+# 19. Статусы консультации
+
+```text
+CREATED
+   ↓
+RECORDING
+   ↓
+PROCESSING
+   ↓
+TRANSCRIBED
+   ↓
+AI_GENERATED
+   ↓
+REVIEWED
+   ↓
+APPROVED
+   ↓
+SENT_TO_MIS
+```
+
+Ошибка:
+
+```text
+FAILED
+```
+
+---
+
+# 20. API
+
+Минимальный API:
+
+```http
+POST /api/v1/consultations
+
+GET /api/v1/consultations/{id}
+
+POST /api/v1/consultations/{id}/audio
+
+POST /api/v1/consultations/{id}/transcribe
+
+GET /api/v1/consultations/{id}/transcript
+
+POST /api/v1/consultations/{id}/generate
+
+GET /api/v1/consultations/{id}/document
+
+PATCH /api/v1/consultations/{id}/document
+
+POST /api/v1/consultations/{id}/approve
+
+POST /api/v1/consultations/{id}/send-to-mis
+```
+
+---
+
+# 21. MIS Integration
+
+Создать отдельный интерфейс:
+
+```python
+class MISProvider(Protocol):
+
+    async def send_consultation(
+        self,
+        consultation: ConsultationData
+    ) -> MISResult:
+        ...
+```
+
+Для MVP:
+
+```text
+MockMISProvider
+```
+
+Он имитирует успешную интеграцию.
+
+Например:
+
+```http
+POST /mock-mis/api/consultations
+```
+
+Request:
+
+```json
+{
+  "patient_id": "PATIENT-123",
+  "consultation_id": "...",
+  "complaints": [...],
+  "anamnesis": "...",
+  "diagnosis": "...",
+  "recommendations": [...]
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "document_id": "MIS-89322"
+}
+```
+
+Когда UMC даст документацию API, пишется:
+
+```text
+UMCMISProvider
+```
+
+вместо Mock.
+
+---
+
+# 22. PostgreSQL
+
+Минимальные таблицы:
+
+```text
+consultations
+transcripts
+consultation_documents
+consultation_edits
+audio_files
+mis_exports
+```
+
+`consultations`:
+
+```text
+id UUID
+external_patient_id VARCHAR
+status VARCHAR
+
+created_by UUID
+
+created_at TIMESTAMP
+updated_at TIMESTAMP
+approved_at TIMESTAMP
+```
+
+`transcripts`:
+
+```text
+id UUID
+consultation_id UUID
+
+raw_text TEXT
+normalized_text TEXT
+masked_text TEXT
+
+language VARCHAR
+stt_model VARCHAR
+duration_seconds FLOAT
+
+created_at TIMESTAMP
+```
+
+`consultation_documents`:
+
+```text
+id UUID
+consultation_id UUID
+
+ai_generated_data JSONB
+doctor_approved_data JSONB
+
+llm_provider VARCHAR
+llm_model VARCHAR
+
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+Для MVP `JSONB` здесь удобнее, чем создавать 30 колонок под медицинскую форму.
+
+---
+
+# 23. Хранение аудио
+
+Аудио — чувствительная информация.
+
+В MVP:
+
+```text
+/storage/audio/{consultation_uuid}.webm
+```
+
+Но сделать `StorageProvider`:
+
+```python
+class StorageProvider:
+    save()
+    get()
+    delete()
+```
+
+Позже:
+
+```text
+LocalStorage
+        ↓
+MinIO / S3-compatible storage
+```
+
+Нужно предусмотреть автоматическое удаление аудио после заданного retention period, если требования UMC не требуют иного.
+
+---
+
+# 24. Безопасность
+
+Минимально:
+
+```text
+HTTPS
+JWT authentication
+role-based access
+PII masking
+audit logging
+encrypted secrets
+CORS restrictions
+request validation
+file size limits
+MIME validation
+```
+
+`.env`:
+
+```env
+OPENAI_API_KEY=***
+
+DATABASE_URL=***
+
+JWT_SECRET=***
+```
+
+Никаких API keys:
+
+```python

@@ -1,0 +1,31 @@
+# Accelerated follow-up — explicitly authorized
+
+User first requested stopping further P0 to verify/restart, then explicitly requested implementing all three additions and finishing quickly. User then answered YES to accelerated implementation without further spec/plan approvals, verification/restart, and saving shown Canva presentation. This supersedes prior design/plan review gates and prior stop, not safety/verification/privacy requirements.
+
+Ruling: execute compact new feature scope in three disjoint workers without separate spec/plan approval gates, as user explicitly directed. Cost/tradeoff: limited protocol coverage/manual clinical interpretation, no full corpus clinical validation; final tests remain mandatory.
+
+1. p0_revisions: first commit approved Canva draft, then branded sparse PDF/DOCX + immutable PDF artifact/random public verificationID/hash, migration0004/config/main backendintegration. Public verification contains issuer/date/status/hash ONLY; no medicaldata/download/auth token/EDS claim. PUBLIC_BASE_URL configured origin, localhost5173 default explicitly local-only until publicHTTPSconfigured. Originaltemplates and approvedclinicaldata preserved.
+2. p0_panels: sparse/Add clinicaleditor preservingnegatives andevidence/dirtyguards; publicverifyUI/localfilehash (neverupload); authenticatedRKprotocolpicker/checklistpanel. Frontend-only ownership.
+3. p0_preview: new protocolrouter/module/tests and minimalREADME/Composecatalogmount. AllowlistedcatalogURLfetch only, actualRKversion confirmation, boundedfetch/cache, literalshortsourcequotes, diagnosticsection/presence checklist andmanualreview forunmappedcriteria. No patientdata senttosources/LLM, no fabricatedmandatoryclinicalrules, no claimfullclinicalcompliance or3206RKcoverage. No globalbackend/model/migration edits; routerintegrationbyrevisionsworker.
+
+Shared public API: GET /api/v1/verification/{public_id} -> issuer,issued_at,status(valid),sha256; unknown404. Frontend /verify/{id} noauthentication, no medicalinfo. Protocolcontract workers coordinate: POST /api/v1/protocols/search {query,limit?}; GET /api/v1/protocols/{catalog_id}; routerfactory create_protocol_router(current_user).
+
+Source snapshots: exportworker /tmp/medhub-export-feature-base-n0cKJO; others report paths. TDDfocused/finalsuites/build/browser; mainownsverifiedbackup/migrations/restart. Do not alter .env, credentials orliveDB inworkers. No bulkprotocolscrape, no newdiagautofill, no externalpublication/tunnel.
+
+Pre-followup root evidence:223backendtests passed(41.71s,baselinewarning),62frontendtests passed(12.16s,PDFjsNodeadvisory),productionbuild0(5.03s,existingcomments/chunkswarnings). This includes Task7fix2 delayedrevisionfetch regression. Rootread-onlylivepreflight:storage/medhub.db,live/openai,head0002,5consultations,0PROCESSING. API PID98723 cwdproject/exePython3.12 verified; NOT stopped/migratedyet. Recheckactiveworkbeforeactualrestart.
+
+Canva approveddraftCOMMITTED byworker:12slides5syntheticscreens. Editable https://www.canva.com/d/Gm_gkOnVEltusYu ; view https://www.canva.com/d/LcZdoQNyZBLtday . Newfeaturesremainroadmaponapproveddeck (do notclaimdeliveredbeforeverified). NativePDFexportnotexposed;600pxpreviewPDFnotadequate; usercanexportnativePDFfromCanva. Notes persistdocs/presentation/.
+
+## Final verification and rollout — 2026-09-30 15:23 Asia/Almaty
+
+- Final integrated backend: 250 passed, one existing Starlette/httpx warning, 75.66s (worker exact run, dedicated PostgreSQL + isolated SQLite). Protocol source tests and harness tests also passed after final harness changes (12 focused tests).
+- Root frontend: 69 passed / 12 files, 15.38s; production build passed, 5.28s. One earlier concurrent-build run timed out in the old 1-second Workspace locator; isolated Workspace and two subsequent full suites passed without product changes. Existing PDF.js Node advisory, dependency comment and large-chunk build warnings remain.
+- Root full isolated acceptance passed: `/tmp/medhub-p0-acceptance-4ma91wjj`. All six PDF/DOCX forms, transcript conflict/correction/regeneration, RU/KZ multipage PDF, authenticated preview/local worker/exact download, evidence audio seek, privacy, sparse Add editing, mobile containment, anonymous safe verification metadata and local PDF hash match/mismatch. Generated microphone recording/retry returned two successful uploads. No real consultation data or paid provider used in these tests.
+- `docker compose config --quiet` passed. Docker daemon runtime/image deployment was not tested.
+- Before rollout: verified exact owned API PID98723 and project cwd, no PROCESSING consultations. Gracefully stopped it. Created private verified backup `storage/backups/medhub-before-qr-protocols-20260930-1521.sqlite` (directory0700/file0600).
+- Migrated actual SQLite database from0002 through0004. Integrity passed; hashes and row counts of all preexisting columns/records matched backup (except intended deterministic transcript segment IDs). Preserved5 consultations,5 transcripts,5 documents,8 edits,4 MIS exports,3 audio metadata rows,1 user.
+- Restarted same live API command/settings, PID319132, tool session28379. Health live/ok, doctor login, six templates, authenticated protocol catalog search passed. `.env`, credentials and API key unchanged. No real consultation was approved/exported as part of verification.
+- Stopped owned temporary PostgreSQL PID111048 cleanly; retained its files and all snapshots. Isolated acceptance servers stopped by harness. Live API intentionally remains running.
+- User confirmed no public domain. QR uses local origin and cannot be scanned from another device; existing issued artifacts keep their original URL. Configure durable HTTPS origin before externally usable issuance. Registry/hash verification is not EDS, government verification or medical correctness.
+- Protocol aid is deliberately partial: physician chooses a confirmed RK page/version, source diagnostic rows are displayed with current draft field-presence signals/manual review. Selection is view-local and not persisted. No assertion of full clinical compliance or complete catalogue coverage.
+- Canva approved deck is saved; native PDF download still must be performed in Canva. No hackathon submission or sharing-policy change performed.

@@ -1,0 +1,14 @@
+{
+  "doctor": {
+    "username": "doctor",
+    "password": "doctor",
+    "display_name": "Абай Кандышев"
+  },
+  "consultations": [
+    {
+      "external_patient_id": "DEMO-SYNTHETIC-001",
+      "template_id": "therapist",
+      "status": "CREATED"
+    }
+  ]
+}
